@@ -1,8 +1,10 @@
 package main
-import ("testing"
-	"fmt"
-	)
 
-func TestMain(t *testing.T){
+import (
+	"fmt"
+	"testing"
+)
+
+func TestMain(t *testing.T) {
 	fmt.Println("testing calc main")
 }
