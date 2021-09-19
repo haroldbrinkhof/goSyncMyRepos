@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-git/go-git/v5"
@@ -30,17 +31,22 @@ func getTimeOfCurrentCommit() time.Time {
 
 func syncReposOfActiveGroups(when time.Time, activeGroups []repositoryGroup) {
 	var wd string = workingDir()
+	var wg sync.WaitGroup
 
+	var i int = 0
 	for _, activeRepository := range activeGroups {
 		for _, repositoryPath := range activeRepository.repositories {
 			if repositoryPath != wd {
-				checkoutClosestPriorCommit(when, repositoryPath)
+				wg.Add(i)
+				go checkoutClosestPriorCommit(when, repositoryPath, &wg)
+				i++
 			}
 		}
 	}
+
 }
 
-func checkoutClosestPriorCommit(when time.Time, path string) {
+func checkoutClosestPriorCommit(when time.Time, path string, wg *sync.WaitGroup) {
 	r, err := git.PlainOpen(path)
 	logAndExitOnError(err)
 
@@ -59,6 +65,7 @@ func checkoutClosestPriorCommit(when time.Time, path string) {
 			logAndExitOnError(err)
 			fmt.Println(path + " synced.")
 		}
+		wg.Done()
 		return nil
 	})
 }
