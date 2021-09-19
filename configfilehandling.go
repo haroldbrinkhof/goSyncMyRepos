@@ -30,7 +30,7 @@ func loadConfigFile() []repositoryGroup {
 }
 
 func determineConfigFileLocation() string {
-	return filepath.Join(homeDir(), "/goSyncRepositories.config")
+	return filepath.Join(homeDir(), "/.goSyncMyRepos.config")
 }
 
 func openConfigFile() *os.File {

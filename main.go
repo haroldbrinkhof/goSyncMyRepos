@@ -12,7 +12,7 @@ type repositoryGroup struct {
 func main() {
 
 	if !isGitDir(workingDir()) {
-		log.Fatal("working dir must be a git repository")
+		log.Fatal("this command must be called from inside a git repository")
 	}
 	var groups []repositoryGroup = loadConfigFile()
 

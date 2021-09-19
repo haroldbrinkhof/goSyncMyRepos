@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	"strings"
 	"time"
+
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 func isGitDir(dir string) bool {
@@ -17,11 +18,13 @@ func isGitDir(dir string) bool {
 func getTimeOfCurrentCommit() time.Time {
 	r, err := git.PlainOpen(workingDir())
 	logAndExitOnError(err)
+
 	ref, err := r.Head()
 	logAndExitOnError(err)
 
 	commit, err := r.CommitObject(ref.Hash())
 	logAndExitOnError(err)
+
 	return commit.Committer.When
 }
 
