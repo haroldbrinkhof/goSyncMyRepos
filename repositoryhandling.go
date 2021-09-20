@@ -31,22 +31,22 @@ func getTimeOfCurrentCommit() time.Time {
 
 func syncReposOfActiveGroups(when time.Time, activeGroups []repositoryGroup) {
 	var wd string = workingDir()
-	var wg sync.WaitGroup
+	var wg *sync.WaitGroup = &sync.WaitGroup{}
 
-	var i int = 0
 	for _, activeRepository := range activeGroups {
 		for _, repositoryPath := range activeRepository.repositories {
 			if repositoryPath != wd {
-				wg.Add(i)
-				go checkoutClosestPriorCommit(when, repositoryPath, &wg)
-				i++
+				wg.Add(1)
+				go checkoutClosestPriorCommit(when, repositoryPath, wg)
 			}
 		}
 	}
+	wg.Wait()
 
 }
 
 func checkoutClosestPriorCommit(when time.Time, path string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	r, err := git.PlainOpen(path)
 	logAndExitOnError(err)
 
@@ -59,15 +59,25 @@ func checkoutClosestPriorCommit(when time.Time, path string, wg *sync.WaitGroup)
 	w, err := r.Worktree()
 	logAndExitOnError(err)
 
+	var synced bool = false
+	var commitToCheckout object.Commit
+
 	cIter.ForEach(func(c *object.Commit) error {
 		if when.Equal(c.Committer.When) || when.After(c.Committer.When) {
-			err = w.Checkout(&git.CheckoutOptions{Hash: c.Hash})
-			logAndExitOnError(err)
-			fmt.Println(path + " synced.")
+			// account for the fact that sometimes commits seem to come out of order and only take
+			// most recent one to check out
+			if commitToCheckout.Committer.When.Before(c.Committer.When) {
+				commitToCheckout = *c
+			}
+			synced = true
 		}
-		wg.Done()
 		return nil
 	})
+
+	if synced {
+		err = w.Checkout(&git.CheckoutOptions{Hash: commitToCheckout.Hash})
+		fmt.Printf("syncing %s done.\n", path)
+	}
 }
 
 func findActiveRepositoryGroup(groups []repositoryGroup) []repositoryGroup {
